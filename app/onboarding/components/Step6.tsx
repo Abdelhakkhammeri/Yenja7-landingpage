@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type Step6Props = {
   onBack: () => void;
@@ -17,143 +17,163 @@ const MAX_IMAGES = 6;
 export default function Step6({ onBack, onFinish }: Step6Props) {
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
+  const remainingSlots = MAX_IMAGES - images.length;
 
-    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
-    if (!imageFiles.length) {
-      setError("Please select image files only (JPEG, PNG, etc.).");
+  function handleOpenPicker() {
+    if (remainingSlots <= 0) {
+      setError(`You can upload up to ${MAX_IMAGES} photos.`);
+      return;
+    }
+    setError(null);
+    fileInputRef.current?.click();
+  }
+
+  function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newImages: SelectedImage[] = [];
+    let available = remainingSlots;
+
+    for (let i = 0; i < files.length && available > 0; i++) {
+      const file = files[i];
+      if (!file.type.startsWith("image/")) continue;
+
+      newImages.push({
+        file,
+        url: URL.createObjectURL(file),
+      });
+      available--;
+    }
+
+    if (newImages.length === 0) {
+      if (!error) setError("Please choose image files.");
       return;
     }
 
-    const combined = [...images.map((img) => img.file), ...imageFiles];
-    const limited = combined.slice(0, MAX_IMAGES);
-
-    // Clean old URLs
-    images.forEach((img) => URL.revokeObjectURL(img.url));
-
-    const withUrls: SelectedImage[] = limited.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    }));
-
-    setImages(withUrls);
-
-    if (combined.length > MAX_IMAGES) {
-      setError(`You can upload up to ${MAX_IMAGES} images. Extra files were ignored.`);
-    } else {
-      setError(null);
-    }
-
-    e.target.value = "";
+    setImages((prev) => [...prev, ...newImages]);
+    // Reset value so selecting the same file again triggers onChange
+    event.target.value = "";
   }
 
-  function handleRemoveImage(index: number) {
+  function handleRemoveImage(url: string) {
     setImages((prev) => {
-      const copy = [...prev];
-      const removed = copy.splice(index, 1)[0];
-      if (removed) {
-        URL.revokeObjectURL(removed.url);
-      }
-      return copy;
+      prev.forEach((img) => {
+        if (img.url === url) {
+          URL.revokeObjectURL(img.url);
+        }
+      });
+      return prev.filter((img) => img.url !== url);
     });
   }
 
   function handleFinishClick() {
-    // Later we’ll upload them; for now we just forward files to parent
+    if (images.length === 0) {
+      // You can allow 0 images if you want, or force at least 1
+      // setError("Please upload at least one photo of your business.");
+      // return;
+    }
     onFinish(images.map((img) => img.file));
   }
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-2 text-center">
-        Add pictures of your business
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-center">
+        Add photos (Ajoutez des photos)
       </h2>
-      <p className="text-sm text-white/80 mb-6 text-center">
-        You can upload up to {MAX_IMAGES} photos from your phone or computer.
-        This helps customers recognize your place.
+
+      <p className="text-sm text-white/80 text-center">
+        Add up to {MAX_IMAGES} photos of your business (front, inside, menu,
+        products…).
+        <br />
+        <span className="text-white/70">
+          (Ajoutez jusqu&apos;à {MAX_IMAGES} photos de votre commerce.)
+        </span>
       </p>
 
-      {/* Upload area */}
-      <div className="mb-6">
-        <label className="block text-sm mb-2">
-          Business photos (front, inside, logo…)
-        </label>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFilesSelected}
+      />
 
-        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-white/40 rounded-2xl px-4 py-10 bg-white/10 hover:bg-white/15 cursor-pointer transition-all">
-          <span className="text-3xl mb-2">📷</span>
-          <span className="text-sm font-semibold mb-1">
-            Tap to choose photos
+      {/* Upload button */}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={handleOpenPicker}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-red-600 text-sm font-semibold shadow-md hover:scale-[1.02] active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+          disabled={remainingSlots <= 0}
+        >
+          <span>📷</span>
+          <span>
+            {remainingSlots > 0
+              ? `Add photo (${remainingSlots} left)`
+              : "Maximum photos reached"}
           </span>
-          <span className="text-[11px] text-white/70 text-center">
-            You can take new photos or choose them from your gallery
-            (maximum {MAX_IMAGES} images).
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            capture="environment"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </label>
+        </button>
       </div>
 
+      {/* Thumbnails */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {images.map((img, index) => (
+            <div
+              key={img.url}
+              className="relative rounded-2xl overflow-hidden border border-white/30 bg-black/20"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.url}
+                alt={`Business ${index + 1}`}
+                className="w-full h-28 sm:h-32 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => handleRemoveImage(img.url)}
+                className="absolute top-1 right-1 rounded-full bg-black/70 text-white text-xs px-2 py-1"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Error */}
       {error && (
-        <p className="text-xs text-red-200 bg-red-500/20 border border-red-300/60 rounded-lg px-3 py-2 mb-4">
+        <p className="text-xs text-red-200 bg-red-500/20 border border-red-300/60 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
 
-      {/* Previews */}
-      {images.length > 0 && (
-        <div className="mb-6">
-          <p className="text-xs text-white/70 mb-2">
-            Selected photos ({images.length}/{MAX_IMAGES}):
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {images.map((img, index) => (
-              <div
-                key={img.url}
-                className="relative rounded-2xl overflow-hidden border border-white/30 bg-black/20"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={`Business ${index + 1}`}
-                  className="w-full h-28 sm:h-32 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-1 right-1 bg-black/60 rounded-full w-6 h-6 flex items-center justify-center text-xs text-white hover:bg-black/80"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Debug (optional, can remove later) */}
+      <div className="mt-2 text-xs text-white/70">
+        Selected files: {images.length} / {MAX_IMAGES}
+      </div>
 
-      <div className="flex justify-between mt-2">
+      {/* Buttons */}
+      <div className="flex justify-between gap-3 mt-4">
         <button
           type="button"
           onClick={onBack}
-          className="px-6 py-3 bg-white/20 border border-white/40 rounded-xl text-sm font-semibold hover:bg-white/25 transition-all"
+          className="flex-1 px-4 py-3 bg-white/20 border border-white/40 rounded-xl text-sm font-semibold hover:bg-white/25 transition-all"
         >
-          Back
+          Back (Retour)
         </button>
 
         <button
           type="button"
           onClick={handleFinishClick}
-          className="px-8 py-3 bg-white text-red-600 font-bold rounded-xl text-sm sm:text-base hover:scale-[1.02] active:scale-[0.97] transition-all shadow-xl"
+          className="flex-1 px-4 py-3 bg-white/20 border border-white/40 rounded-xl text-sm font-semibold hover:bg-white/25 transition-all disabled:opacity-60"
         >
-          Finish
+          Finish (Terminer)
         </button>
       </div>
     </div>

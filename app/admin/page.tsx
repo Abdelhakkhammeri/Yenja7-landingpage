@@ -407,9 +407,7 @@ export default function AdminDashboardPage() {
               Total
             </div>
             <div className="mt-1 text-2xl font-bold">{totalSubmissions}</div>
-            <p className="mt-1 text-[11px] text-white/60">
-              All submissions
-            </p>
+            <p className="mt-1 text-[11px] text-white/60">All submissions</p>
           </div>
 
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-3 py-3 sm:px-4 sm:py-4 shadow-sm">
@@ -443,9 +441,7 @@ export default function AdminDashboardPage() {
             <div className="mt-1 text-2xl font-bold text-rose-200">
               {declinedCount}
             </div>
-            <p className="mt-1 text-[11px] text-rose-200/80">
-              Need follow-up
-            </p>
+            <p className="mt-1 text-[11px] text-rose-200/80">Need follow-up</p>
           </div>
 
           <div className="rounded-2xl border border-sky-500/30 bg-sky-500/5 px-3 py-3 sm:px-4 sm:py-4 shadow-sm col-span-2 sm:col-span-1">
@@ -464,9 +460,7 @@ export default function AdminDashboardPage() {
         {/* Filter + list */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="text-lg font-semibold">
-              Business submissions
-            </h2>
+            <h2 className="text-lg font-semibold">Business submissions</h2>
 
             {/* Status filter pills – mobile friendly */}
             <div className="inline-flex items-center justify-start rounded-full bg-slate-900/80 border border-slate-800 p-1 text-xs w-full sm:w-auto">
@@ -792,16 +786,34 @@ export default function AdminDashboardPage() {
                       </section>
                     </div>
 
-                    {/* Right: image + actions */}
+                    {/* Right: images + actions */}
                     <div className="w-full md:w-60 flex flex-col gap-3">
-                      {/* Thumbnail */}
+                      {/* All photos */}
                       {sub.imageUrls && sub.imageUrls.length > 0 ? (
-                        <div className="w-full aspect-video bg-slate-800 rounded-xl overflow-hidden">
-                          <img
-                            src={sub.imageUrls[0]}
-                            alt={mainTitle ?? "Business photo"}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="space-y-1">
+                          <div className="grid grid-cols-2 gap-2">
+                            {sub.imageUrls.map((url, idx) => (
+                              <div
+                                key={url + idx}
+                                className="relative w-full aspect-video bg-slate-800 rounded-xl overflow-hidden"
+                              >
+                                <img
+                                  src={url}
+                                  alt={`${
+                                    mainTitle ?? "Business photo"
+                                  } #${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <span className="absolute bottom-1 right-1 rounded-full bg-black/70 text-[10px] px-2 py-0.5 text-white/80">
+                                  {idx + 1}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-white/60">
+                            {sub.imageUrls.length} photo
+                            {sub.imageUrls.length > 1 ? "s" : ""} uploaded
+                          </p>
                         </div>
                       ) : (
                         <div className="w-full aspect-video bg-slate-800 rounded-xl flex items-center justify-center text-xs text-white/40">

@@ -1,206 +1,41 @@
-// "use client";
-
-// import { useState } from "react";
-
-// type Step3Props = {
-//   onBack: () => void;
-//   onNext: () => void;
-// };
-
-// export default function Step3({ onBack, onNext }: Step3Props) {
-//   const [country, setCountry] = useState("");
-//   const [city, setCity] = useState("");
-//   const [street, setStreet] = useState("");
-//   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
-//     null
-//   );
-//   const [locLoading, setLocLoading] = useState(false);
-//   const [locError, setLocError] = useState<string | null>(null);
-
-//   async function handleDetectLocation() {
-//     if (typeof navigator === "undefined" || !navigator.geolocation) {
-//       setLocError("Geolocation is not supported in this browser.");
-//       return;
-//     }
-
-//     setLocLoading(true);
-//     setLocError(null);
-
-//     navigator.geolocation.getCurrentPosition(
-//       async (position) => {
-//         const { latitude, longitude } = position.coords;
-//         setCoords({ lat: latitude, lon: longitude });
-
-//         try {
-//           const res = await fetch(
-//             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-//           );
-
-//           if (!res.ok) {
-//             throw new Error("Reverse geocoding failed");
-//           }
-
-//           const data = await res.json();
-//           const addr = data.address || {};
-
-//           const detectedCountry = addr.country || "";
-//           const detectedCity =
-//             addr.city || addr.town || addr.village || addr.hamlet || "";
-//           const detectedStreet =
-//             addr.road || addr.pedestrian || addr.suburb || "";
-
-//           if (detectedCountry) setCountry(detectedCountry);
-//           if (detectedCity) setCity(detectedCity);
-//           if (detectedStreet) setStreet(detectedStreet);
-
-//           if (!detectedCountry && !detectedCity) {
-//             setLocError(
-//               "We found your position, but couldn't detect city/country. Please fill manually."
-//             );
-//           }
-//         } catch (err) {
-//           console.error(err);
-//           setLocError(
-//             "We detected your position but could not resolve the address. Please fill manually."
-//           );
-//         } finally {
-//           setLocLoading(false);
-//         }
-//       },
-//       (error) => {
-//         console.error(error);
-//         setLocLoading(false);
-//         if (error.code === error.PERMISSION_DENIED) {
-//           setLocError(
-//             "Location access was denied. You can fill your address manually."
-//           );
-//         } else {
-//           setLocError(
-//             "We couldn't get your location. Please try again or fill manually."
-//           );
-//         }
-//       },
-//       {
-//         enableHighAccuracy: false,
-//         timeout: 10000,
-//         maximumAge: 60000,
-//       }
-//     );
-//   }
-
-//   function handleNext() {
-//     // Later we can enforce at least city or country as required
-//     if (!country && !city && !street) {
-//       alert("Please fill at least city or country or street.");
-//       return;
-//     }
-//     onNext();
-//   }
-
-//   return (
-//     <div>
-//       <h2 className="text-xl font-bold mb-4 text-center">
-//         Where is your business located?
-//       </h2>
-
-//       <p className="text-sm text-white/80 mb-4 text-center">
-//         Use your current location or fill your address manually.
-//       </p>
-
-//       {/* Auto-location button */}
-//       <div className="mb-5 flex justify-center">
-//         <button
-//           type="button"
-//           onClick={handleDetectLocation}
-//           disabled={locLoading}
-//           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-red-600 text-sm font-semibold shadow-md hover:scale-[1.02] active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-//         >
-//           {locLoading ? (
-//             <>
-//               <span className="h-3 w-3 rounded-full border-2 border-red-600 border-t-transparent animate-spin" />
-//               Detecting location…
-//             </>
-//           ) : (
-//             <>
-//               <span>📍</span>
-//               <span>Use my current location</span>
-//             </>
-//           )}
-//         </button>
-//       </div>
-
-//       {locError && (
-//         <p className="mb-4 text-xs text-red-200 bg-red-500/20 border border-red-300/60 rounded-lg px-3 py-2">
-//           {locError}
-//         </p>
-//       )}
-
-//       {/* Country */}
-//       <label className="block text-sm mb-1">Country</label>
-//       <input
-//         type="text"
-//         placeholder="France, Belgium, Germany…"
-//         value={country}
-//         onChange={(e) => setCountry(e.target.value)}
-//         className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-white placeholder-white/60 mb-4 focus:outline-none focus:ring-2 focus:ring-white/50"
-//       />
-
-//       {/* Street */}
-//       <label className="block text-sm mb-1">Street / Address</label>
-//       <input
-//         type="text"
-//         placeholder="Ex: 12 Rue de Paris"
-//         value={street}
-//         onChange={(e) => setStreet(e.target.value)}
-//         className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-white placeholder-white/60 mb-4 focus:outline-none focus:ring-2 focus:ring-white/50"
-//       />
-
-//       {/* City */}
-//       <label className="block text-sm mb-1">City</label>
-//       <input
-//         type="text"
-//         placeholder="Paris, Brussels, Berlin…"
-//         value={city}
-//         onChange={(e) => setCity(e.target.value)}
-//         className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-white placeholder-white/60 mb-6 focus:outline-none focus:ring-2 focus:ring-white/50"
-//       />
-
-//       {/* Optional coordinates display */}
-//       {coords && (
-//         <p className="mb-4 text-[11px] text-white/70">
-//           Detected coordinates:{" "}
-//           <span className="font-mono">
-//             {coords.lat.toFixed(4)}, {coords.lon.toFixed(4)}
-//           </span>
-//         </p>
-//       )}
-
-//       {/* Buttons */}
-//       <div className="flex justify-between">
-//         <button
-//           type="button"
-//           onClick={onBack}
-//           className="px-6 py-3 bg-white/20 border border-white/40 rounded-xl text-sm font-semibold hover:bg-white/25 transition-all"
-//         >
-//           Back
-//         </button>
-
-//         <button
-//           type="button"
-//           onClick={handleNext}
-//           className="px-8 py-3 bg-white text-red-600 font-bold rounded-xl text-sm sm:text-base hover:scale-[1.02] active:scale-[0.97] transition-all shadow-xl"
-//         >
-//           Continue
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
 "use client";
 
 import { useState } from "react";
 
-type Props = {
+const ALL_COUNTRIES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia",
+  "Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belgium",
+  "Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil",
+  "Brunei","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada",
+  "Cape Verde","Central African Republic","Chad","Chile","China","Colombia","Comoros",
+  "Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti",
+  "Dominica","Dominican Republic","DR Congo","Ecuador","Egypt","El Salvador",
+  "Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland",
+  "France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Greenland",
+  "Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland",
+  "India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica",
+  "Japan","Jordan","Kazakhstan","Kenya","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon",
+  "Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar",
+  "Malawi","Malaysia","Maldives","Mali","Malta","Mauritania","Mauritius","Mexico",
+  "Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia",
+  "Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea",
+  "North Macedonia","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines",
+  "Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saudi Arabia","Senegal",
+  "Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Somalia",
+  "South Africa","South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland",
+  "Syria","Taiwan","Tajikistan","Tanzania","Thailand","Togo","Tunisia","Turkey",
+  "Turkmenistan","Uganda","Ukraine","United Arab Emirates","United Kingdom",
+  "United States","Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zambia",
+  "Zimbabwe"
+];
+
+type OpeningDay = {
+  open: string;
+  close: string;
+  closed: boolean;
+};
+
+type Step3Props = {
   street: string;
   setStreet: (v: string) => void;
   city: string;
@@ -213,6 +48,15 @@ type Props = {
   setLatitude: (v: number | null) => void;
   longitude: number | null;
   setLongitude: (v: number | null) => void;
+  openingHours: {
+    monday: OpeningDay;
+    tuesday: OpeningDay;
+    wednesday: OpeningDay;
+    thursday: OpeningDay;
+    friday: OpeningDay;
+    saturday: OpeningDay;
+    sunday: OpeningDay;
+  };
   onNext: () => void;
   onBack: () => void;
 };
@@ -232,10 +76,16 @@ export default function Step3({
   setLongitude,
   onNext,
   onBack,
-}: Props) {
+}: Step3Props) {
   const [error, setError] = useState<string | null>(null);
   const [locLoading, setLocLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
+
+  // Whenever the user edits address fields, we reset lat/lon
+  function markAddressChanged() {
+    setLatitude(null);
+    setLongitude(null);
+  }
 
   function buildAddressString() {
     const parts = [street, postalCode, city, country]
@@ -244,9 +94,17 @@ export default function Step3({
     return parts.join(", ");
   }
 
-  // Called only in background when we click "Continue"
+  function normalizeCountryName(name: string | undefined | null): string {
+    if (!name) return "";
+    const exact = ALL_COUNTRIES.find(
+      (c) => c.toLowerCase() === name.toLowerCase()
+    );
+    return exact ?? name;
+  }
+
+  // Forward geocoding (address -> lat/lon), used in background on Continue
   async function geocodeAddressIfNeeded() {
-    // If user already used "locate me", don't override
+    // If Locate Me already filled coords and user didn't edit address, don't override
     if (latitude != null && longitude != null) return;
 
     const address = buildAddressString();
@@ -261,12 +119,21 @@ export default function Step3({
     setError(null);
 
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(address)}`);
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
+        address
+      )}&addressdetails=1&limit=1`;
+
+      const res = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
       if (!res.ok) {
         throw new Error(`Geocode status ${res.status}`);
       }
 
-      const results = await res.json();
+      const results: any[] = await res.json();
 
       if (!results || results.length === 0) {
         setError(
@@ -275,9 +142,9 @@ export default function Step3({
         throw new Error("No geocode results");
       }
 
-      const { lat, lon } = results[0];
-      setLatitude(parseFloat(lat));
-      setLongitude(parseFloat(lon));
+      const r = results[0];
+      setLatitude(parseFloat(r.lat));
+      setLongitude(parseFloat(r.lon));
     } finally {
       setGeoLoading(false);
     }
@@ -292,14 +159,14 @@ export default function Step3({
     }
 
     try {
-      // 🔍 Background detection of latitude / longitude
       await geocodeAddressIfNeeded();
       onNext();
     } catch {
-      // error already shown, we don't go to next step
+      // error already shown
     }
   }
 
+  // Reverse geocoding (lat/lon -> street/city/postcode/country)
   function handleUseLocation() {
     if (!("geolocation" in navigator)) {
       setError("Geolocation is not available on this device.");
@@ -311,15 +178,69 @@ export default function Step3({
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLatitude(pos.coords.latitude);
-        setLongitude(pos.coords.longitude);
-        setLocLoading(false);
-        // We *could* also reverse geocode here to fill street/city,
-        // but we keep it simple for now.
+        const { latitude: lat, longitude: lon } = pos.coords;
+        setLatitude(lat);
+        setLongitude(lon);
+
+        (async () => {
+          try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(
+              lat
+            )}&lon=${encodeURIComponent(lon)}&addressdetails=1`;
+
+            const res = await fetch(url, {
+              headers: {
+                Accept: "application/json",
+              },
+            });
+
+            if (!res.ok) {
+              throw new Error(`Reverse geocode status ${res.status}`);
+            }
+
+            const data: any = await res.json();
+            const addr = data.address || {};
+
+            const streetParts = [
+              addr.road,
+              addr.house_number,
+              addr.pedestrian,
+              addr.suburb,
+            ].filter(Boolean);
+
+            if (streetParts.length) {
+              setStreet(streetParts.join(" "));
+            }
+            if (addr.city || addr.town || addr.village || addr.hamlet) {
+              setCity(
+                addr.city ||
+                  addr.town ||
+                  addr.village ||
+                  addr.hamlet ||
+                  ""
+              );
+            }
+            if (addr.postcode) {
+              setPostalCode(addr.postcode);
+            }
+            if (addr.country) {
+              setCountry(normalizeCountryName(addr.country));
+            }
+          } catch (err) {
+            console.error(err);
+            setError(
+              "We detected your position but could not resolve the address. Please check or fill it manually."
+            );
+          } finally {
+            setLocLoading(false);
+          }
+        })();
       },
       (err) => {
         console.error(err);
-        setError("Could not get your location. Please try again or fill your address manually.");
+        setError(
+          "Could not get your location. Please try again or fill your address manually."
+        );
         setLocLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000 }
@@ -329,17 +250,17 @@ export default function Step3({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-xl font-bold text-center">
-        Address & location (Adresse & localisation)
+        Address & location
       </h2>
 
       <p className="text-sm text-white/80 text-center">
-        Choose{" "}
-        <span className="font-semibold">Locate me</span> or fill your address
-        manually. We will detect the GPS position in the background.
+        Choose <span className="font-semibold">Locate me</span> or fill your
+        address manually. We will detect the GPS position in the background.
         <br />
         <span className="text-white/70">
-          (Choisissez &quot;Localiser mon commerce&quot; ou remplissez l&apos;adresse
-          manuellement. La position GPS sera détectée automatiquement.)
+          (Choisissez &quot;Localiser mon commerce&quot; ou remplissez
+          l&apos;adresse manuellement. La position GPS sera détectée
+          automatiquement.)
         </span>
       </p>
 
@@ -359,7 +280,7 @@ export default function Step3({
           ) : (
             <>
               <span>📍</span>
-              <span>Locate me (Localiser mon commerce)</span>
+              <span>Locate me</span>
             </>
           )}
         </button>
@@ -377,7 +298,10 @@ export default function Step3({
         <input
           type="text"
           value={street}
-          onChange={(e) => setStreet(e.target.value)}
+          onChange={(e) => {
+            markAddressChanged();
+            setStreet(e.target.value);
+          }}
           placeholder="Ex: 10 Rue de la Paix"
           className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm sm:text-base"
         />
@@ -386,13 +310,14 @@ export default function Step3({
       {/* City + postal code */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-sm mb-1">
-            City (Ville) *
-          </label>
+          <label className="block text-sm mb-1">City (Ville) *</label>
           <input
             type="text"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => {
+              markAddressChanged();
+              setCity(e.target.value);
+            }}
             placeholder="Ex: Paris, Bruxelles, Berlin…"
             className={`w-full px-4 py-3 rounded-xl border text-sm sm:text-base
               ${
@@ -411,7 +336,10 @@ export default function Step3({
           <input
             type="text"
             value={postalCode}
-            onChange={(e) => setPostalCode(e.target.value)}
+            onChange={(e) => {
+              markAddressChanged();
+              setPostalCode(e.target.value);
+            }}
             placeholder="Ex: 75010"
             className="w-full px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm sm:text-base"
           />
@@ -420,23 +348,29 @@ export default function Step3({
 
       {/* Country */}
       <div>
-        <label className="block text-sm mb-1">
-          Country (Pays) *
-        </label>
-        <input
-          type="text"
+        <label className="block text-sm mb-1">Country (Pays) *</label>
+        <select
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          placeholder="Ex: France, Belgique, Allemagne…"
+          onChange={(e) => {
+            markAddressChanged();
+            setCountry(e.target.value);
+          }}
           className={`w-full px-4 py-3 rounded-xl border text-sm sm:text-base
             ${
               !country && error
                 ? "border-red-300 bg-red-500/20"
-                : "border-white/30 bg-white/20"
+                : "border-white/30"
             }
-            text-white placeholder-white/60
+            bg-white text-black
             focus:outline-none focus:ring-2 focus:ring-white/50`}
-        />
+        >
+          <option value="">Select a country (Choisir un pays)</option>
+          {ALL_COUNTRIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Error message */}
@@ -445,7 +379,12 @@ export default function Step3({
           {error}
         </p>
       )}
-
+    {/* DEBUG: Show coordinates */}
+    {/* <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20 text-xs text-white/80">
+      <p className="font-semibold mb-1">📌 Debug info:</p>
+      <p>Latitude: {latitude ?? "null"}</p>
+      <p>Longitude: {longitude ?? "null"}</p>
+    </div> */}
       {/* Buttons */}
       <div className="flex justify-between gap-3 mt-2">
         <button
@@ -459,7 +398,7 @@ export default function Step3({
         <button
           type="submit"
           disabled={geoLoading || locLoading}
-          className="flex-1 px-4 py-3 bg-white text-red-600 font-bold rounded-xl text-sm sm:text-base hover:scale-[1.02] active:scale-[0.97] transition-all shadow-xl disabled:opacity-60"
+          className="flex-1 px-4 py-3 bg-white/20 border border-white/40 rounded-xl text-sm font-semibold hover:bg-white/25 transition-all disabled:opacity-60"
         >
           {geoLoading ? "Detecting position…" : "Continue (Continuer)"}
         </button>
