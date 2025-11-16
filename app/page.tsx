@@ -69,7 +69,7 @@ export default function Home() {
         <p className="mt-2 text-sm sm:text-base font-light text-white/90 max-w-md mx-auto leading-relaxed">
           La plateforme qui aide les Tunisiens partout dans le monde à se
           connecter avec les commerces tunisiens — lancement très
-          prochainement.
+          prochainement...
         </p>
 
         {/* Arabic */}
